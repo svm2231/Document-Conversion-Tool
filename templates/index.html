@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF to Excel Converter</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 50px;
+      }
+      input,
+      button {
+        margin: 10px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Upload a PDF to Convert into Excel</h2>
+
+    <input type="file" id="pdfFile" accept=".pdf" />
+    <button onclick="uploadPDF()">Upload & Convert</button>
+
+    <p id="status"></p>
+
+    <a id="downloadLink" style="display: none">Download Excel File</a>
+  </body>
+  <script>
+    function uploadPDF() {
+      let fileInput = document.getElementById("pdfFile");
+      let status = document.getElementById("status");
+      let downloadLink = document.getElementById("downloadLink");
+
+      if (fileInput.files.length === 0) {
+        status.innerText = "Please select a file first.";
+        return;
+      }
+
+      let formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      status.innerText = "Processing...";
+
+      fetch("/uploads", { method: "POST", body: formData })
+        .then((response) => response.blob())
+        .then((blob) => {
+          let url = URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.download = "converted.xlsx";
+          downloadLink.style.display = "block";
+          downloadLink.innerText = "Download Excel File";
+          status.innerText = "Conversion completed!";
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          status.innerText = "Conversion failed!";
+        });
+    }
+  </script>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF to Excel Converter</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 50px;
+        background-color: #f8f9fa;
+      }
+      h2 {
+        margin-bottom: 20px;
+      }
+      .upload-container {
+        border: 2px dashed #007bff;
+        padding: 20px;
+        display: inline-block;
+        width: 50%;
+        min-width: 300px;
+        cursor: pointer;
+        background-color: white;
+        border-radius: 10px;
+      }
+      .upload-container:hover {
+        background-color: #f1f1f1;
+      }
+      .file-input {
+        display: none;
+      }
+      .choose-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .choose-btn:hover {
+        background-color: #0056b3;
+      }
+      .upload-btn {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-top: 15px;
+      }
+      .upload-btn:hover {
+        background-color: #218838;
+      }
+      .download-btn {
+        display: none;
+        background-color: #ffc107;
+        color: black;
+        padding: 12px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-top: 20px;
+        display: inline-block;
+      }
+      .download-btn:hover {
+        background-color: #e0a800;
+      }
+      .status {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>PDF to Excel Converter</h2>
+
+    <!-- Drag & Drop Area -->
+    <div
+      class="upload-container"
+      id="drop-area"
+      onclick="document.getElementById('pdfFile').click();"
+    >
+      <p>Drag & drop files here or</p>
+      <button class="choose-btn">Choose File</button>
+      <input
+        type="file"
+        id="pdfFile"
+        accept=".pdf"
+        class="file-input"
+        onchange="handleFiles(this.files)"
+      />
+    </div>
+
+    <p id="file-name">No file chosen</p>
+
+    <button class="upload-btn" onclick="uploadPDF()">Upload & Convert</button>
+
+    <p class="status" id="status"></p>
+
+    <a id="downloadLink" class="download-btn">Download Excel File</a>
+
+    <script>
+      function handleFiles(files) {
+        let fileNameDisplay = document.getElementById("file-name");
+        if (files.length > 0) {
+          fileNameDisplay.textContent = files[0].name;
+        } else {
+          fileNameDisplay.textContent = "No file chosen";
+        }
+      }
+
+      function uploadPDF() {
+        let fileInput = document.getElementById("pdfFile");
+        let status = document.getElementById("status");
+        let downloadLink = document.getElementById("downloadLink");
+
+        if (fileInput.files.length === 0) {
+          status.innerText = "Please select a file first.";
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        status.innerText = "Processing...";
+
+        fetch("/uploads", { method: "POST", body: formData })
+          .then((response) => response.blob())
+          .then((blob) => {
+            let url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = "converted.xlsx";
+            downloadLink.style.display = "inline-block";
+            status.innerText = "Conversion completed!";
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            status.innerText = "Conversion failed!";
+          });
+      }
+
+      // Drag & Drop Handling
+      let dropArea = document.getElementById("drop-area");
+
+      dropArea.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dropArea.style.backgroundColor = "#f1f1f1";
+      });
+
+      dropArea.addEventListener("dragleave", () => {
+        dropArea.style.backgroundColor = "white";
+      });
+
+      dropArea.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropArea.style.backgroundColor = "white";
+        let files = event.dataTransfer.files;
+        document.getElementById("pdfFile").files = files;
+        handleFiles(files);
+      });
+    </script>
+  </body>
+</html>

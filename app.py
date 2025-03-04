@@ -5,13 +5,13 @@ import os
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "uploads"
-if not os.path.exists(UPLOAD_FOLDER):
+UPLOAD_FOLDER = "C:\\Users\\Cmisu08\\Desktop\\PYTHON\\sandboxing\\Tool\\uploads"
+if not os.path.exists(UPLOAD_FOLDER):   
     os.makedirs(UPLOAD_FOLDER)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index1.html')
 
 @app.route('/uploads', methods=['POST'])
 def upload_file():
@@ -34,6 +34,7 @@ def upload_file():
     with pd.ExcelWriter(excel_path) as writer:
         for i, table in enumerate(tables):
             df=table.df
+            print(df)
             df.columns = df.iloc[0]  # Assign first row as column headers
             df = df[1:]
             df.to_excel(writer, sheet_name=f"Table_{i+1}", index=False)

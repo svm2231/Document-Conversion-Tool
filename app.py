@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, send_file
 import pandas as pd
 import camelot
 import os
+import img2pdf
 
 app = Flask(__name__)
 
@@ -40,6 +41,36 @@ def upload_file():
             df.to_excel(writer, sheet_name=f"Table_{i+1}", index=False)
 
     return send_file(excel_path, as_attachment=True)
+
+@app.route('/convert_img_to_pdf', methods=['POST'])
+def uploadImages():
+    if 'files' not in request.files:
+        return "No file part"
+    
+    files = request.files.getlist('files')  # Get multiple files
+    
+    if len(files) == 0:
+        return "No selected files"
+
+    img_paths = []
+    
+    # Save all images and store their paths
+    for file in files:
+        if file.filename == '':
+            continue
+        img_path = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(img_path)
+        img_paths.append(img_path)
+
+    if len(img_paths) == 0:
+        return "No valid images uploaded"
+
+    # Convert multiple images to a single PDF
+    pdf_path = os.path.join(UPLOAD_FOLDER, "converted.pdf")
+    with open(pdf_path, "wb") as f:
+        f.write(img2pdf.convert(img_paths))
+
+    return send_file(pdf_path, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -1,18 +1,20 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, jsonify
+from PIL import Image
+import pytesseract
 import pandas as pd
 import camelot
 import os
 import img2pdf
 
 app = Flask(__name__)
-
+pytesseract.pytesseract.tesseract_cmd= r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 UPLOAD_FOLDER = "C:\\Users\\Cmisu08\\Desktop\\PYTHON\\sandboxing\\Tool\\uploads"
 if not os.path.exists(UPLOAD_FOLDER):   
     os.makedirs(UPLOAD_FOLDER)
 
 @app.route('/')
 def index():
-    return render_template('index1.html')
+    return render_template('index2.html')
 
 @app.route('/uploads', methods=['POST'])
 def upload_file():
@@ -71,6 +73,24 @@ def uploadImages():
         f.write(img2pdf.convert(img_paths))
 
     return send_file(pdf_path, as_attachment=True)
+
+@app.route('/extract_text', methods=['POST'])
+
+def extract_text():
+
+    if 'file' not in request.files:
+        return "No file part"
+    
+
+    file = request.files['file']
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(file_path)
+    
+    # Save all images and store their paths
+    image = Image.open(file_path)
+    extracted_text = pytesseract.image_to_string(image)
+
+    return jsonify({'extracted_text':extracted_text})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

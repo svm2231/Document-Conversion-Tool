@@ -3,35 +3,210 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Images to PDF Converter</title>
+    <title>File Converter</title>
+    <link rel="icon" type="image/png" href="converter_icon.png" />
     <style>
+      section {
+        border: 2px dashed #8d3636;
+        padding: 20px;
+        margin: 20px auto;
+        width: 60%;
+        background-color: white;
+        border-radius: 10px;
+      }
+
       body {
         font-family: Arial, sans-serif;
         text-align: center;
         padding: 50px;
+        background-color: #f8f9fa;
       }
-      input,
-      button {
-        margin: 10px;
+      .upload-container {
+        border: 2px dashed #007bff;
+        padding: 20px;
+        display: inline-block;
+        width: 50%;
+        min-width: 300px;
+        cursor: pointer;
+        background-color: white;
+        border-radius: 10px;
+      }
+      .upload-container:hover {
+        background-color: #f1f1f1;
+      }
+      .file-input {
+        display: none;
+      }
+      .choose-btn,
+      .upload-btn,
+      .download-btn {
+        padding: 10px 15px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-top: 10px;
+      }
+      .choose-btn {
+        background-color: #007bff;
+        color: white;
+      }
+      .choose-btn:hover {
+        background-color: #0056b3;
+      }
+      .upload-btn {
+        background-color: #28a745;
+        color: white;
+      }
+      .upload-btn:hover {
+        background-color: #218838;
+      }
+      #ocrText {
+        border: 2px solid #007bff; /* Blue border */
         padding: 10px;
+        border-radius: 5px; /* Rounded corners */
+        background-color: #f8f9fa; /* Light background */
+        white-space: pre-wrap; /* Ensure text wraps */
+        text-align: left;
+        min-height: 50px; /* Ensures visibility even when empty */
+      }
+      .download-btn {
+        background-color: #ffc107;
+        color: black;
+        text-decoration: none;
+        font-weight: bold;
+        display: none;
+      }
+      .download-btn:hover {
+        background-color: #e0a800;
+      }
+      .status {
+        margin-top: 10px;
+        font-weight: bold;
       }
     </style>
   </head>
   <body>
-    <h2>Upload Images to Convert into a Single PDF</h2>
+    <!--PDF Table to Excel Sheet-->
+    <section>
+      <h2>PDF to Excel Converter</h2>
+      <div
+        class="upload-container"
+        id="drop-area-pdf"
+        onclick="document.getElementById('pdfFile').click();"
+      >
+        <p>Drag & drop a PDF or</p>
+        <button class="choose-btn">Choose File</button>
+        <input
+          type="file"
+          id="pdfFile"
+          accept=".pdf"
+          class="file-input"
+          onchange="handleFiles(this.files, 'pdf-name')"
+        />
+      </div>
+      <p id="pdf-name">No file chosen</p>
+      <button class="upload-btn" onclick="uploadPDF()">Upload & Convert</button>
+      <p class="status" id="status-pdf"></p>
+      <a id="download-pdf" class="download-btn">Download Excel File</a>
+    </section>
 
-    <input type="file" id="imageFiles" accept="image/*" multiple />
-    <button onclick="uploadImages()">Upload & Convert</button>
+    <!--Text Recognition-->
+    <section>
+      <h2>Text Recognition</h2>
+      <div
+        class="upload-container"
+        id="drop-area-img-text"
+        onclick="document.getElementById('TextImgFile').click();"
+      >
+        <p>Drag & drop an image or</p>
+        <button class="choose-btn">Choose File</button>
+        <input
+          type="file"
+          id="TextImgFile"
+          accept="image/*"
+          class="file-input"
+          onchange="handleFiles(this.files, 'img-name-text')"
+        />
+      </div>
+      <p id="img-name-text">No file chosen</p>
+      <button class="upload-btn" onclick="extractText()">
+        Upload & Extract Text
+      </button>
+      <p class="status" id="status-text"></p>
+      <pre id="ocrText"></pre>
+    </section>
 
-    <p id="status"></p>
-
-    <a id="downloadLink" style="display: none">Download PDF</a>
+    <!--Images to PDF-->
+    <section>
+      <h2>Images to PDF Converter</h2>
+      <div
+        class="upload-container"
+        id="drop-area-img"
+        onclick="document.getElementById('imgFiles').click();"
+      >
+        <p>Drag & drop images or</p>
+        <button class="choose-btn">Choose Files</button>
+        <input
+          type="file"
+          id="imgFiles"
+          accept="image/*"
+          class="file-input"
+          multiple
+          onchange="handleFiles(this.files, 'img-name')"
+        />
+      </div>
+      <p id="img-name">No files chosen</p>
+      <button class="upload-btn" onclick="uploadImages()">
+        Upload & Convert
+      </button>
+      <p class="status" id="status-img"></p>
+      <a id="download-img" class="download-btn">Download PDF</a>
+    </section>
 
     <script>
+      function handleFiles(files, displayId) {
+        let fileNameDisplay = document.getElementById(displayId);
+        if (files.length > 0) {
+          fileNameDisplay.textContent = Array.from(files)
+            .map((f) => f.name)
+            .join(", ");
+        } else {
+          fileNameDisplay.textContent = "No file chosen";
+        }
+      }
+
+      function uploadPDF() {
+        let fileInput = document.getElementById("pdfFile");
+        let status = document.getElementById("status-pdf");
+        let downloadLink = document.getElementById("download-pdf");
+
+        if (fileInput.files.length === 0) {
+          status.innerText = "Please select a file first.";
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        status.innerText = "Processing...";
+        fetch("/uploads", { method: "POST", body: formData })
+          .then((response) => response.blob())
+          .then((blob) => {
+            let url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = "converted.xlsx";
+            downloadLink.style.display = "inline-block";
+            status.innerText = "Conversion completed!";
+          })
+          .catch(() => {
+            status.innerText = "Conversion failed!";
+          });
+      }
+
       function uploadImages() {
-        let fileInput = document.getElementById("imageFiles");
-        let status = document.getElementById("status");
-        let downloadLink = document.getElementById("downloadLink");
+        let fileInput = document.getElementById("imgFiles");
+        let status = document.getElementById("status-img");
+        let downloadLink = document.getElementById("download-img");
 
         if (fileInput.files.length === 0) {
           status.innerText = "Please select at least one image file.";
@@ -44,20 +219,54 @@
         }
 
         status.innerText = "Processing...";
-
         fetch("/convert_img_to_pdf", { method: "POST", body: formData })
           .then((response) => response.blob())
           .then((blob) => {
             let url = URL.createObjectURL(blob);
             downloadLink.href = url;
             downloadLink.download = "converted.pdf";
-            downloadLink.style.display = "block";
-            downloadLink.innerText = "Download PDF";
+            downloadLink.style.display = "inline-block";
             status.innerText = "Conversion completed!";
           })
-          .catch((error) => {
-            console.error("Error:", error);
+          .catch(() => {
             status.innerText = "Conversion failed!";
+          });
+      }
+
+      function extractText() {
+        let fileInput = document.getElementById("TextImgFile");
+        let status = document.getElementById("status-text");
+        let extractedText = document.getElementById("ocrText");
+
+        if (fileInput.files.length === 0) {
+          status.innerText = "Please select an image file.";
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        status.innerText = "Processing...";
+        fetch("http://192.168.5.38:5000/extract_text", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `HTTP error! Status: ${response.status} - ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((data) => {
+            extractedText.innerText = data.extracted_text;
+            status.innerText = "Text extraction completed!";
+          })
+          .catch((error) => {
+            // Ensure 'error' is correctly passed here
+            console.error("Error Details:", error); // Log detailed error
+            status.innerText = `Text extraction failed! ${error.message}`;
           });
       }
     </script>

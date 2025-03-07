@@ -21,6 +21,7 @@
         padding: 50px;
         background-color: #f8f9fa;
       }
+      
       .upload-container {
         border: 2px dashed #007bff;
         padding: 20px;
@@ -77,8 +78,9 @@
     </style>
   </head>
   <body>
+    <!--PDF Table to Excel Sheet-->
     <section>
-      <h2>PDF to Excel Converter</h2>
+      <h2>PD to Excel Converter</h2>
       <div
         class="upload-container"
         id="drop-area-pdf"
@@ -99,7 +101,32 @@
       <p class="status" id="status-pdf"></p>
       <a id="download-pdf" class="download-btn">Download Excel File</a>
     </section>
-
+    <!--Text Recognition-->
+    <section>
+      <h2>Text Recognition</h2>
+      <div
+        class="upload-container"
+        id="drop-area-img-text"
+        onclick="document.getElementById('imgFiles-Text').click();"
+      >
+        <p>Drag & drop images or</p>
+        <button class="choose-btn">Choose Files</button>
+        <input
+          type="file"
+          id="TextImgFiles"
+          accept="image/*"
+          class="file-input"
+          onchange="handleFiles(this.files, 'img-name-text')"
+        />
+      </div>
+      <p id="img-name">No files chosen</p>
+      <button class="upload-btn" onclick="extractText()">
+        Upload & Extract Text
+      </button>
+      <p class="status" id="status-img"></p>
+      <pre id="ocrText"></pre>
+    </section>
+    <!--Images to PDF-->
     <section>
       <h2>Images to PDF Converter</h2>
       <div
@@ -115,7 +142,7 @@
           accept="image/*"
           class="file-input"
           multiple
-          onchange="handleFiles(this.files, 'img-name')"
+          onchange="handleFiles(this.files, 'img-name-text')"
         />
       </div>
       <p id="img-name">No files chosen</p>
@@ -125,6 +152,7 @@
       <p class="status" id="status-img"></p>
       <a id="download-img" class="download-btn">Download PDF</a>
     </section>
+
     <script>
       function handleFiles(files, displayId) {
         let fileNameDisplay = document.getElementById(displayId);
@@ -197,6 +225,32 @@
           });
       }
 
+      function extractText() {
+        let fileInput = document.getElementById("TextImgFile");
+        let status = document.getElementById("status-img");
+        let extractedText = document.getElementById("ocrText");
+
+        if (fileInput.files.length === 0) {
+          status.innerText = "Please select an image file.";
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        status.innerText = "Processing...";
+        fetch("/extract_text", { method: "POST", body: formData })
+          .then((response) => response.json())
+          .then((data) => {
+            extractedText.innerText = data.extracted_text;
+            status.innerText = "Text extraction completed!";
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            status.innerText = "Text extraction failed!";
+          });
+      }
+
       // Drag & Drop Handling
       function setupDragDrop(dropAreaId, inputId) {
         let dropArea = document.getElementById(dropAreaId);
@@ -224,6 +278,7 @@
 
       setupDragDrop("drop-area-pdf", "pdfFile");
       setupDragDrop("drop-area-img", "imgFiles");
+      setupDragDrop("drop-area-img-text", "imgFiles-text");
     </script>
   </body>
 </html>
